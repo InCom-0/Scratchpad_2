@@ -10,6 +10,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <regex>
 
 
 #ifdef _WIN32
@@ -21,6 +23,8 @@
 #ifdef __unix__
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
 
 #endif
 

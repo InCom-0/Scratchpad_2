@@ -3,26 +3,44 @@
 #include <iostream>
 
 int main() {
-  auto fg = TerminalColorQuery::queryForeground();
-  if (fg) {
-    auto [r, g, b] = fg.value();
-    std::cerr << "Foreground RGB: " << r << "," << g << "," << b << "\n";
-  } else {
-    std::cerr << "Could not query FG: "
-              << TerminalColorQuery::to_string(fg.error()) << "\n";
-    // fallback logic here (e.g. assume defaults or use other config)
-  }
-
-  // Query palette index 1 (ANSI red)
-
-  for (size_t id = 0; id < 16; ++id) {
-    auto idx = TerminalColorQuery::queryPaletteIndex(id);
-    if (idx) {
-      auto [r, g, b] = idx.value();
-      std::cerr << "Index " << id << ": " << r << "," << g << "," << b << "\n";
-    } else {
-      std::cerr << "Palette query failed: "
-                << TerminalColorQuery::to_string(idx.error()) << "\n";
+    auto fg = TerminalColorQuery::queryForeground();
+    if (fg) {
+        auto [r, g, b] = fg.value();
+        std::cerr << "Foreground RGB: " << static_cast<int>(r) << "," << static_cast<int>(g) << ","
+                  << static_cast<int>(b) << "\n";
     }
-  }
+    else {
+        std::cerr << "Could not query FG: " << TerminalColorQuery::to_string(fg.error()) << "\n";
+        // fallback logic here (e.g. assume defaults or use other config)
+    }
+
+    // Query palette index 1 (ANSI red)
+
+    for (size_t id = 0; id < 16; ++id) {
+        auto idx = TerminalColorQuery::queryPaletteIndex(id);
+        if (idx) {
+            auto [r, g, b] = idx.value();
+
+            std::cout << "Index " << id << ": " << static_cast<int>(r) << "," << static_cast<int>(g) << ","
+                      << static_cast<int>(b) << "\n";
+        }
+        else { std::cerr << "Palette query failed: " << TerminalColorQuery::to_string(idx.error()) << "\n"; }
+
+
+        auto bckgrnd = TerminalColorQuery::queryBackground();
+        auto frgrnd  = TerminalColorQuery::queryForeground();
+
+        if (bckgrnd) {
+            auto [r, g, b] = bckgrnd.value();
+
+            std::cout << "back " << id << ": " << static_cast<int>(r) << "," << static_cast<int>(g) << ","
+                      << static_cast<int>(b) << "\n";
+        }
+        if (frgrnd) {
+            auto [r, g, b] = frgrnd.value();
+
+            std::cout << "fore " << id << ": " << static_cast<int>(r) << "," << static_cast<int>(g) << ","
+                      << static_cast<int>(b) << "\n";
+        }
+    }
 }

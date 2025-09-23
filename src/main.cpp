@@ -26,21 +26,5 @@ int main() {
         }
         else { std::cerr << "Palette query failed: " << TerminalColorQuery::to_string(idx.error()) << "\n"; }
 
-
-        auto bckgrnd = TerminalColorQuery::queryBackground();
-        auto frgrnd  = TerminalColorQuery::queryForeground();
-
-        if (bckgrnd) {
-            auto [r, g, b] = bckgrnd.value();
-
-            std::cout << "back " << id << ": " << static_cast<int>(r) << "," << static_cast<int>(g) << ","
-                      << static_cast<int>(b) << "\n";
-        }
-        if (frgrnd) {
-            auto [r, g, b] = frgrnd.value();
-
-            std::cout << "fore " << id << ": " << static_cast<int>(r) << "," << static_cast<int>(g) << ","
-                      << static_cast<int>(b) << "\n";
-        }
     }
 }

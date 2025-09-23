@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdint>
 #include <expected>
+#include <filesystem>
 #include <fstream>
 #include <optional>
 #include <regex>
@@ -14,6 +15,12 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#endif
+
+#ifdef _WIN32
+#include <knownfolders.h> // FOLDERID_LocalAppData
+#include <shlobj.h>       // SHGetKnownFolderPath
+
 #else
 #include <errno.h>
 #include <fcntl.h>
@@ -41,8 +48,8 @@ public:
     // query palette index 0..255
     [[nodiscard]] static Result queryPaletteIndex(int index) {
 #ifdef _WIN32
-        if (isWindowsTerminal()) { return queryWindowsTerminalJson(index); }
-        if (isVSCodeTerminal()) { return queryVSCodeJson(index); }
+        // if (isWindowsTerminal()) { return queryWindowsTerminalJson(index); }
+        // else if (isVSCodeTerminal()) { return queryVSCodeJson(index); }
         return queryPaletteIndexWindows(index);
 #else
         return queryPaletteIndexPosix(index);
@@ -148,18 +155,29 @@ private:
         return colorref_to_rgb(infoOrErr->ColorTable[bg]);
     }
 
-    static Result queryWindowsTerminalJson(int index) {
-        std::string localAppData = std::getenv("LOCALAPPDATA") ? std::getenv("LOCALAPPDATA") : "";
-        if (localAppData.empty()) { return canonical(index); }
-        std::string path =
-            localAppData + R"(\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json)";
-        return parseJsonPalette(path, index);
+    static std::filesystem::path getLocalAppData() {
+        PWSTR                 path = nullptr;
+        std::filesystem::path result;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE, NULL, &path))) { result = path; }
+        if (path) { CoTaskMemFree(path); }
+        return result;
     }
-    static Result queryVSCodeJson(int index) {
-        std::string appData = std::getenv("APPDATA") ? std::getenv("APPDATA") : "";
-        if (appData.empty()) { return canonical(index); }
-        std::string path = appData + R"(\Code\User\settings.json)";
-        return parseJsonPalette(path, index);
+
+    static std::expected<RGB, TerminalColorError> queryWindowsTerminalJson(int index) noexcept {
+        auto base = getLocalAppData();
+        if (base.empty()) { return std::unexpected(TerminalColorError::NoTerminal); }
+
+        auto jsonPath =
+            base / L"Packages" / L"Microsoft.WindowsTerminal_8wekyb3d8bbwe" / L"LocalState" / L"settings.json";
+        return parseJsonPalette(jsonPath.generic_string(), index);
+    }
+    static std::expected<RGB, TerminalColorError> queryVSCodeJson(int index) noexcept {
+        auto base = getLocalAppData();
+        if (base.empty()) { return std::unexpected(TerminalColorError::NoTerminal); }
+
+        auto jsonPath = base / L"Programs" / L"Microsoft VS Code" / L"resources" / L"app" / L"extensions" / L"theme" /
+                        L"colors.json";
+        return parseJsonPalette(jsonPath.generic_string(), index);
     }
 
     static Result parseJsonPalette(const std::string &path, int index) {
@@ -318,7 +336,7 @@ private:
 
         static std::regex rx_rgb(R"(rgb:([0-9A-Fa-f]{1,4})/([0-9A-Fa-f]{1,4})/([0-9A-Fa-f]{1,4}))");
         static std::regex rx_hash(R"(#([0-9A-Fa-f]{6}))");
-        std::smatch                 m;
+        std::smatch       m;
         if (std::regex_search(reply, m, rx_rgb)) {
             auto to8 = [](std::string_view s) -> std::uint8_t {
                 unsigned v = 0;

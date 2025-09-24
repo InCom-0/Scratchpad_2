@@ -10,17 +10,9 @@
 #include <regex>
 #include <sstream>
 #include <string>
-#include <string_view>
-#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
-#endif
-
-#ifdef _WIN32
-#include <knownfolders.h> // FOLDERID_LocalAppData
-#include <shlobj.h>       // SHGetKnownFolderPath
-
 #else
 #include <errno.h>
 #include <fcntl.h>
@@ -45,36 +37,75 @@ public:
     };
     using Result = std::expected<RGB, TerminalColorError>;
 
-    // query palette index 0..255
+    // ────────────── PUBLIC API ──────────────
+
+    // query palette index 0..255 (returns expected)
     [[nodiscard]] static Result queryPaletteIndex(int index) {
 #ifdef _WIN32
-        // if (isWindowsTerminal()) { return queryWindowsTerminalJson(index); }
-        // else if (isVSCodeTerminal()) { return queryVSCodeJson(index); }
-        return queryPaletteIndexWindows(index);
+        return campbellColor(index);
 #else
         return queryPaletteIndexPosix(index);
 #endif
     }
 
-    [[nodiscard]] static Result queryPaletteIndexFromSgr(int sgrCode) {
-        if (auto idx = sgr_to_index(sgrCode)) { return queryPaletteIndex(*idx); }
-        return std::unexpected(TerminalColorError::Unsupported);
+    // convenience: always returns something (Campbell on failure)
+    [[nodiscard]] static RGB queryPaletteIndex_fb(int index) noexcept {
+#ifdef _WIN32
+        return campbellColor(index);
+#else
+        auto res = queryPaletteIndexPosix(index);
+        return res ? *res : campbellColor(index);
+#endif
     }
 
+    // foreground
     [[nodiscard]] static Result queryForeground() {
 #ifdef _WIN32
-        return queryForegroundWindows();
+        return campbellColor(7);
 #else
         return queryForegroundPosix();
 #endif
     }
 
+    [[nodiscard]] static RGB queryForeground_fb() noexcept {
+#ifdef _WIN32
+        return campbellColor(7);
+#else
+        auto res = queryForegroundPosix();
+        return res ? *res : campbellColor(7);
+#endif
+    }
+
+    // background
     [[nodiscard]] static Result queryBackground() {
 #ifdef _WIN32
-        return queryBackgroundWindows();
+        return campbellColor(0);
 #else
         return queryBackgroundPosix();
 #endif
+    }
+
+    [[nodiscard]] static RGB queryBackground_fb() noexcept {
+#ifdef _WIN32
+        return campbellColor(0);
+#else
+        auto res = queryBackgroundPosix();
+        return res ? *res : campbellColor(0);
+#endif
+    }
+
+    // get all 16 colors at once with fallback
+    [[nodiscard]] static std::array<RGB, 16> queryAll16_fb() noexcept {
+        std::array<RGB, 16> colors{};
+        for (int i = 0; i < 16; ++i) {
+#ifdef _WIN32
+            colors[i] = campbellColor(i);
+#else
+            auto res  = queryPaletteIndexPosix(i);
+            colors[i] = res ? *res : campbellColor(i);
+#endif
+        }
+        return colors;
     }
 
     [[nodiscard]] static constexpr const char *to_string(TerminalColorError e) noexcept {
@@ -88,143 +119,29 @@ public:
         return "Unknown";
     }
 
+    // direct Campbell color
+    [[nodiscard]] static RGB campbellColor(int index) noexcept {
+        if (! index_valid(index)) { return RGB{0, 0, 0}; }
+        return campbell16[index % 16];
+    }
+
 private:
-    // ---------- Common ----------
+    // ────────────── INTERNAL ──────────────
+
     [[nodiscard]] static constexpr bool index_valid(int idx) noexcept { return idx >= 0 && idx <= 255; }
 
-    [[nodiscard]] static constexpr std::optional<int> sgr_to_index(int code) noexcept {
-        if (code >= 30 && code <= 37) { return code - 30; }
-        if (code >= 90 && code <= 97) { return (code - 90) + 8; }
-        if (code >= 40 && code <= 47) { return code - 40; }
-        if (code >= 100 && code <= 107) { return (code - 100) + 8; }
-        return std::nullopt;
-    }
-
-    static constexpr inline std::array<RGB, 16> canonical16{
-        {RGB{0, 0, 0}, RGB{205, 0, 0}, RGB{0, 205, 0}, RGB{205, 205, 0}, RGB{0, 0, 238}, RGB{205, 0, 205},
-         RGB{0, 205, 205}, RGB{229, 229, 229}, RGB{127, 127, 127}, RGB{255, 0, 0}, RGB{0, 255, 0}, RGB{255, 255, 0},
-         RGB{92, 92, 255}, RGB{255, 0, 255}, RGB{0, 255, 255}, RGB{255, 255, 255}}};
-
-    static RGB canonicalPalette(int index) noexcept {
-        if (index < 16) { return canonical16[index]; }
-        // extended indexes just return black if unknown
-        return RGB{0, 0, 0};
-    }
+    // Default Windows Terminal Campbell palette
+    static constexpr inline std::array<RGB, 16> campbell16{
+        RGB{12, 12, 12},    RGB{197, 15, 31},  RGB{19, 161, 14},  RGB{193, 156, 0},
+        RGB{0, 55, 218},    RGB{136, 23, 152}, RGB{58, 150, 221}, RGB{204, 204, 204},
+        RGB{118, 118, 118}, RGB{231, 72, 86},  RGB{22, 198, 12},  RGB{249, 241, 165},
+        RGB{59, 120, 255},  RGB{180, 0, 158},  RGB{97, 214, 214}, RGB{242, 242, 242}};
 
 #ifdef _WIN32
-    static RGB colorref_to_rgb(COLORREF c) noexcept {
-        return RGB{static_cast<std::uint8_t>(GetRValue(c)), static_cast<std::uint8_t>(GetGValue(c)),
-                   static_cast<std::uint8_t>(GetBValue(c))};
-    }
+    // So far nothing here
+    // In the future might have some implementation once Windows terminal reports actually used colors with OSC 4
 
-    static std::expected<CONSOLE_SCREEN_BUFFER_INFOEX, TerminalColorError> getConsoleInfoEx() noexcept {
-        CONSOLE_SCREEN_BUFFER_INFOEX info{};
-        info.cbSize = sizeof(info);
-        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-        if (! hOut || hOut == INVALID_HANDLE_VALUE) { return std::unexpected(TerminalColorError::NoTerminal); }
-
-        if (! GetConsoleScreenBufferInfoEx(hOut, &info)) { return std::unexpected(TerminalColorError::IoError); }
-
-        return info;
-    }
-
-    static Result queryPaletteIndexWindows(int index) noexcept {
-        if (! index_valid(index)) { return std::unexpected(TerminalColorError::Unsupported); }
-        auto infoOrErr = getConsoleInfoEx();
-        if (! infoOrErr) { return std::unexpected(infoOrErr.error()); }
-        return colorref_to_rgb(infoOrErr->ColorTable[index % 16]); // ColorTable 0–15 only
-    }
-
-    static Result queryForegroundWindows() noexcept {
-        auto infoOrErr = getConsoleInfoEx();
-        if (! infoOrErr) { return std::unexpected(infoOrErr.error()); }
-        WORD attr = infoOrErr->wAttributes;
-        int  fg   = attr & 0x7;
-        if (attr & FOREGROUND_INTENSITY) { fg += 8; }
-        if (! index_valid(fg)) { return std::unexpected(TerminalColorError::Unsupported); }
-        return colorref_to_rgb(infoOrErr->ColorTable[fg]);
-    }
-
-    static Result queryBackgroundWindows() noexcept {
-        auto infoOrErr = getConsoleInfoEx();
-        if (! infoOrErr) { return std::unexpected(infoOrErr.error()); }
-        WORD attr = infoOrErr->wAttributes;
-        int  bg   = (attr >> 4) & 0x7;
-        if (attr & BACKGROUND_INTENSITY) { bg += 8; }
-        if (! index_valid(bg)) { return std::unexpected(TerminalColorError::Unsupported); }
-        return colorref_to_rgb(infoOrErr->ColorTable[bg]);
-    }
-
-    static std::filesystem::path getLocalAppData() {
-        PWSTR                 path = nullptr;
-        std::filesystem::path result;
-        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE, NULL, &path))) { result = path; }
-        if (path) { CoTaskMemFree(path); }
-        return result;
-    }
-
-    static std::expected<RGB, TerminalColorError> queryWindowsTerminalJson(int index) noexcept {
-        auto base = getLocalAppData();
-        if (base.empty()) { return std::unexpected(TerminalColorError::NoTerminal); }
-
-        auto jsonPath =
-            base / L"Packages" / L"Microsoft.WindowsTerminal_8wekyb3d8bbwe" / L"LocalState" / L"settings.json";
-        return parseJsonPalette(jsonPath.generic_string(), index);
-    }
-    static std::expected<RGB, TerminalColorError> queryVSCodeJson(int index) noexcept {
-        auto base = getLocalAppData();
-        if (base.empty()) { return std::unexpected(TerminalColorError::NoTerminal); }
-
-        auto jsonPath = base / L"Programs" / L"Microsoft VS Code" / L"resources" / L"app" / L"extensions" / L"theme" /
-                        L"colors.json";
-        return parseJsonPalette(jsonPath.generic_string(), index);
-    }
-
-    static Result parseJsonPalette(const std::string &path, int index) {
-        std::ifstream file(path);
-        if (! file.is_open()) { return canonical(index); }
-        std::stringstream ss;
-        ss << file.rdbuf();
-        std::string content = ss.str();
-
-        static const std::array<std::string, 16> keys = {
-            "ansiBlack",       "ansiRed",           "ansiGreen",       "ansiYellow",
-            "ansiBlue",        "ansiMagenta",       "ansiCyan",        "ansiWhite",
-            "ansiBrightBlack", "ansiBrightRed",     "ansiBrightGreen", "ansiBrightYellow",
-            "ansiBrightBlue",  "ansiBrightMagenta", "ansiBrightCyan",  "ansiBrightWhite"};
-        if (index >= 16) { return canonical(index); }
-        std::string key = "terminal." + keys[index];
-
-        size_t pos = content.find(key);
-        if (pos == std::string::npos) { return canonical(index); }
-        size_t hash = content.find('#', pos);
-        if (hash == std::string::npos || hash + 6 >= content.size()) { return canonical(index); }
-
-        RGB  out{};
-        auto parse2 = [&](char hi, char lo) -> std::uint8_t {
-            unsigned v = 0;
-            std::from_chars(&hi, &hi + 1, v, 16);
-            v            <<= 4;
-            unsigned tmp   = 0;
-            std::from_chars(&lo, &lo + 1, tmp, 16);
-            v |= tmp;
-            return static_cast<std::uint8_t>(v);
-        };
-        out.r = parse2(content[hash + 1], content[hash + 2]);
-        out.g = parse2(content[hash + 3], content[hash + 4]);
-        out.b = parse2(content[hash + 5], content[hash + 6]);
-        return out;
-    }
-
-    static Result canonical(int index) { return canonicalPalette(index); }
-
-    static bool isWindowsTerminal() { return std::getenv("WT_SESSION") != nullptr; }
-    static bool isVSCodeTerminal() {
-        const char *p = std::getenv("TERM_PROGRAM");
-        return p && std::string(p) == "vscode";
-    }
-
-#else // ---------- POSIX ----------
+#else
     struct uniq_fd {
         int fd{-1};
         explicit uniq_fd(int f) : fd(f) {}
@@ -319,11 +236,9 @@ private:
 
     static std::expected<std::string, TerminalColorError> send_osc_and_read(const std::string &osc,
                                                                             int timeoutMs = 500) noexcept {
-        // basic terminal detection
         if (! isatty(STDOUT_FILENO) && ! isatty(STDIN_FILENO)) {
             return std::unexpected(TerminalColorError::NoTerminal);
         }
-
         uniq_fd tty(::open("/dev/tty", O_RDWR | O_NOCTTY));
         if (! tty.valid()) { return std::unexpected(TerminalColorError::NoTerminal); }
         if (! write_all(tty.get(), osc.data(), osc.size())) { return std::unexpected(TerminalColorError::IoError); }
@@ -331,7 +246,6 @@ private:
     }
 
     static std::expected<RGB, TerminalColorError> parse_color_from_reply(std::string reply) noexcept {
-        // trim trailing \r\n
         while (! reply.empty() && (reply.back() == '\r' || reply.back() == '\n')) { reply.pop_back(); }
 
         static std::regex rx_rgb(R"(rgb:([0-9A-Fa-f]{1,4})/([0-9A-Fa-f]{1,4})/([0-9A-Fa-f]{1,4}))");
@@ -358,7 +272,7 @@ private:
         return std::unexpected(TerminalColorError::ParseError);
     }
 
-    static std::string make_osc_query(const std::string &body) { return std::string("\033]") + body + '\a'; }
+    static std::string make_osc_query(const std::string &body) { return "\033]" + body + '\a'; }
 
     static Result queryPaletteIndexPosix(int index) noexcept {
         if (! index_valid(index)) { return std::unexpected(TerminalColorError::Unsupported); }
@@ -368,6 +282,7 @@ private:
         if (! rgbOrErr) { return std::unexpected(rgbOrErr.error()); }
         return *rgbOrErr;
     }
+
     static Result queryForegroundPosix() noexcept {
         auto replyOrErr = send_osc_and_read(make_osc_query("10;?"));
         if (! replyOrErr) { return std::unexpected(replyOrErr.error()); }
@@ -375,6 +290,7 @@ private:
         if (! rgbOrErr) { return std::unexpected(rgbOrErr.error()); }
         return *rgbOrErr;
     }
+
     static Result queryBackgroundPosix() noexcept {
         auto replyOrErr = send_osc_and_read(make_osc_query("11;?"));
         if (! replyOrErr) { return std::unexpected(replyOrErr.error()); }

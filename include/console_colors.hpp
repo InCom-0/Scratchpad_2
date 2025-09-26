@@ -10,6 +10,7 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -68,15 +69,26 @@ inline constexpr scheme16 campbell{
     {255, 255, 255},
     {255, 255, 255}};
 
-inline constexpr scheme16 campbell_powershell{
-    {{INCCC_RBG{12, 12, 12}, INCCC_RBG{197, 15, 31}, INCCC_RBG{19, 161, 14}, INCCC_RBG{193, 156, 0},
-      INCCC_RBG{0, 55, 218}, INCCC_RBG{136, 23, 152}, INCCC_RBG{58, 150, 221}, INCCC_RBG{204, 204, 204},
-      INCCC_RBG{118, 118, 118}, INCCC_RBG{231, 72, 86}, INCCC_RBG{22, 198, 12}, INCCC_RBG{249, 241, 165},
-      INCCC_RBG{59, 120, 255}, INCCC_RBG{180, 0, 158}, INCCC_RBG{97, 214, 214}, INCCC_RBG{242, 242, 242}}},
+inline constexpr scheme16 dimidium{
+    {{INCCC_RBG{0, 0, 0}, INCCC_RBG{204, 36, 29}, INCCC_RBG{80, 204, 80}, INCCC_RBG{204, 204, 29},
+      INCCC_RBG{29, 80, 204}, INCCC_RBG{204, 29, 204}, INCCC_RBG{29, 204, 204}, INCCC_RBG{204, 204, 204},
+      INCCC_RBG{102, 102, 102}, INCCC_RBG{204, 102, 102}, INCCC_RBG{102, 204, 102}, INCCC_RBG{204, 204, 102},
+      INCCC_RBG{102, 102, 204}, INCCC_RBG{204, 102, 204}, INCCC_RBG{102, 204, 204}, INCCC_RBG{204, 204, 204}}},
     {204, 204, 204}, // foreground
-    {1, 36, 86},     // background
-    {255, 255, 255}, // cursor
-    {255, 255, 255}  // selection
+    {0, 0, 0},       // background
+    {204, 204, 204}, // cursor
+    {204, 204, 204}  // selection
+};
+
+inline constexpr scheme16 dark_plus{
+    {{INCCC_RBG{0, 0, 0}, INCCC_RBG{198, 47, 55}, INCCC_RBG{55, 190, 120}, INCCC_RBG{226, 232, 34},
+      INCCC_RBG{57, 110, 199}, INCCC_RBG{184, 53, 188}, INCCC_RBG{59, 167, 204}, INCCC_RBG{229, 229, 229},
+      INCCC_RBG{102, 102, 102}, INCCC_RBG{233, 74, 81}, INCCC_RBG{69, 211, 138}, INCCC_RBG{242, 248, 74},
+      INCCC_RBG{78, 138, 233}, INCCC_RBG{210, 106, 214}, INCCC_RBG{73, 183, 218}, INCCC_RBG{229, 229, 229}}},
+    {204, 204, 204}, // foreground
+    {30, 30, 30},    // background
+    {204, 204, 204}, // cursor
+    {204, 204, 204}  // selection
 };
 
 inline constexpr scheme16 vintage{
@@ -88,6 +100,17 @@ inline constexpr scheme16 vintage{
     {0, 0, 0},       // background
     {192, 192, 192}, // cursor (fallback)
     {192, 192, 192}  // selection (fallback)
+};
+
+inline constexpr scheme16 ottosson{
+    {{INCCC_RBG{0, 38, 26}, INCCC_RBG{255, 0, 0}, INCCC_RBG{0, 255, 0}, INCCC_RBG{255, 255, 0}, INCCC_RBG{0, 0, 255},
+      INCCC_RBG{255, 0, 255}, INCCC_RBG{0, 255, 255}, INCCC_RBG{255, 255, 255}, INCCC_RBG{85, 85, 85},
+      INCCC_RBG{255, 85, 85}, INCCC_RBG{85, 255, 85}, INCCC_RBG{255, 255, 85}, INCCC_RBG{85, 85, 255},
+      INCCC_RBG{255, 85, 255}, INCCC_RBG{85, 255, 255}, INCCC_RBG{255, 255, 255}}},
+    {255, 255, 255}, // foreground
+    {0, 38, 26},     // background
+    {255, 255, 255}, // cursor
+    {0, 85, 51}      // selection (fallback greenish)
 };
 
 inline constexpr scheme16 one_half_dark{
@@ -150,18 +173,6 @@ inline constexpr scheme16 tango_light{
     {56, 58, 66},
     {56, 58, 66}};
 
-
-inline constexpr scheme16 dark_plus{
-    {{INCCC_RBG{0, 0, 0}, INCCC_RBG{198, 47, 55}, INCCC_RBG{55, 190, 120}, INCCC_RBG{226, 232, 34},
-      INCCC_RBG{57, 110, 199}, INCCC_RBG{184, 53, 188}, INCCC_RBG{59, 167, 204}, INCCC_RBG{229, 229, 229},
-      INCCC_RBG{102, 102, 102}, INCCC_RBG{233, 74, 81}, INCCC_RBG{69, 211, 138}, INCCC_RBG{242, 248, 74},
-      INCCC_RBG{78, 138, 233}, INCCC_RBG{210, 106, 214}, INCCC_RBG{73, 183, 218}, INCCC_RBG{229, 229, 229}}},
-    {204, 204, 204}, // foreground
-    {30, 30, 30},    // background
-    {204, 204, 204}, // cursor
-    {204, 204, 204}  // selection
-};
-
 inline constexpr scheme16 cga{
     {{INCCC_RBG{0, 0, 0}, INCCC_RBG{0, 0, 170}, INCCC_RBG{0, 170, 0}, INCCC_RBG{0, 170, 170}, INCCC_RBG{170, 0, 0},
       INCCC_RBG{170, 0, 170}, INCCC_RBG{170, 85, 0}, INCCC_RBG{170, 170, 170}, INCCC_RBG{85, 85, 85},
@@ -181,15 +192,15 @@ inline constexpr scheme16 ibm_5153{
     {85, 85, 85}     // selection (fallback)
 };
 
-inline constexpr scheme16 ottosson{
-    {{INCCC_RBG{0, 38, 26}, INCCC_RBG{255, 0, 0}, INCCC_RBG{0, 255, 0}, INCCC_RBG{255, 255, 0}, INCCC_RBG{0, 0, 255},
-      INCCC_RBG{255, 0, 255}, INCCC_RBG{0, 255, 255}, INCCC_RBG{255, 255, 255}, INCCC_RBG{85, 85, 85},
-      INCCC_RBG{255, 85, 85}, INCCC_RBG{85, 255, 85}, INCCC_RBG{255, 255, 85}, INCCC_RBG{85, 85, 255},
-      INCCC_RBG{255, 85, 255}, INCCC_RBG{85, 255, 255}, INCCC_RBG{255, 255, 255}}},
-    {255, 255, 255}, // foreground
-    {0, 38, 26},     // background
+inline constexpr scheme16 campbell_powershell{
+    {{INCCC_RBG{12, 12, 12}, INCCC_RBG{197, 15, 31}, INCCC_RBG{19, 161, 14}, INCCC_RBG{193, 156, 0},
+      INCCC_RBG{0, 55, 218}, INCCC_RBG{136, 23, 152}, INCCC_RBG{58, 150, 221}, INCCC_RBG{204, 204, 204},
+      INCCC_RBG{118, 118, 118}, INCCC_RBG{231, 72, 86}, INCCC_RBG{22, 198, 12}, INCCC_RBG{249, 241, 165},
+      INCCC_RBG{59, 120, 255}, INCCC_RBG{180, 0, 158}, INCCC_RBG{97, 214, 214}, INCCC_RBG{242, 242, 242}}},
+    {204, 204, 204}, // foreground
+    {1, 36, 86},     // background
     {255, 255, 255}, // cursor
-    {0, 85, 51}      // selection (fallback greenish)
+    {255, 255, 255}  // selection
 };
 
 
@@ -199,9 +210,8 @@ inline constexpr scheme16 ottosson{
 
 class TerminalColorQuery {
 public:
-    using Result = std::expected<INCCC_RBG, TerminalColorError>;
-
     // ────────────── PUBLIC API ──────────────
+    using Result = std::expected<INCCC_RBG, TerminalColorError>;
 
     // query palette index 0..255 (returns expected)
     [[nodiscard]] static constexpr Result queryPaletteIndex(int index) {
@@ -272,15 +282,16 @@ public:
         return colors;
     }
 
-    [[nodiscard]] static constexpr const char *to_string(TerminalColorError e) noexcept {
+    [[nodiscard]] static constexpr std::string_view to_string(TerminalColorError e) noexcept {
+        using namespace std::literals;
         switch (e) {
-            case TerminalColorError::NoTerminal:  return "NoTerminal";
-            case TerminalColorError::IoError:     return "IoError";
-            case TerminalColorError::Timeout:     return "Timeout";
-            case TerminalColorError::ParseError:  return "ParseError";
-            case TerminalColorError::Unsupported: return "Unsupported";
+            case TerminalColorError::NoTerminal:  return "NoTerminal"sv;
+            case TerminalColorError::IoError:     return "IoError"sv;
+            case TerminalColorError::Timeout:     return "Timeout"sv;
+            case TerminalColorError::ParseError:  return "ParseError"sv;
+            case TerminalColorError::Unsupported: return "Unsupported"sv;
         }
-        return "Unknown";
+        return "Unknown"sv;
     }
 
     // direct Campbell color

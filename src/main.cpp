@@ -3,6 +3,8 @@
 #include <iostream>
 
 int main() {
+    using namespace incom::standard::console::color;
+
     auto fg = TerminalColorQuery::queryForeground();
     if (fg) {
         auto [r, g, b] = fg.value();

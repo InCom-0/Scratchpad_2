@@ -4,10 +4,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 project(Scratchpad)
 
+include(CMake_dependencies.cmake)
 
 add_executable(Scratch)
-target_sources(Scratch PRIVATE src/main.cpp src/console_colors.cpp)
+target_sources(Scratch PRIVATE src/main.cpp)
 target_link_libraries(Scratch PRIVATE "-lstdc++exp")
+
+target_link_libraries(Scratch PRIVATE sqlpp23::sqlpp23 sqlpp23::sqlite3)
 
 if(MINGW AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
     target_link_options(Scratch PUBLIC -static -static-libgcc -static-libstdc++)

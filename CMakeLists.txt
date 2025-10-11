@@ -10,7 +10,7 @@ add_executable(Scratch)
 target_sources(Scratch PRIVATE src/main.cpp)
 target_link_libraries(Scratch PRIVATE "-lstdc++exp")
 
-target_link_libraries(Scratch PRIVATE sqlpp23::sqlpp23 sqlpp23::sqlite3)
+target_link_libraries(Scratch PRIVATE sqlpp23::sqlpp23 sqlpp23::sqlite3 icuuc uc)
 
 if(MINGW AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
     target_link_options(Scratch PUBLIC -static -static-libgcc -static-libstdc++)

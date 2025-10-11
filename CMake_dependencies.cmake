@@ -31,20 +31,28 @@ set(CMAKE_FIND_PACKAGE_PREFER_CONFIG OFF)
 
 
 ## ICU
-set(BUILD_ICU ON CACHE INTERNAL "")
-set(ICU_STATIC ON CACHE INTERNAL "")
-set(ICU_CFG_OPTIONS "--enable-all" CACHE INTERNAL "")
-set(ICU_BUILD_VERSION 77.1)
+# set(BUILD_ICU OFF CACHE INTERNAL "")
+# set(ICU_STATIC ON CACHE INTERNAL "")
+# set(ICU_CFG_OPTIONS "--enable-all" CACHE INTERNAL "")
+# set(ICU_BUILD_VERSION 77.1)
+# FetchContent_Declare(
+#     icu
+#     GIT_REPOSITORY https://github.com/viaduck/icu-cmake
+#     OVERRIDE_FIND_PACKAGE
+#     EXCLUDE_FROM_ALL
+# )
+
+set(ICU_NO_INSTALL ON CACHE INTERNAL "")
 FetchContent_Declare(
     icu
-    GIT_REPOSITORY https://github.com/viaduck/icu-cmake
+    GIT_REPOSITORY https://github.com/InCom-0/icu-cmake_AiMiDi
     OVERRIDE_FIND_PACKAGE
     EXCLUDE_FROM_ALL
 )
+
 FetchContent_MakeAvailable(icu)
 add_library(ICU::uc ALIAS icu)  # this alias is needed by harfbuzz
 add_library(icuuc ALIAS icu)  # this alias is needed by sfntly
-
 
 
 FetchContent_Declare(

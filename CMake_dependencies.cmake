@@ -45,12 +45,12 @@ include(FetchContent)
 
 set(ICU_NO_INSTALL ON CACHE INTERNAL "")
 FetchContent_Declare(
-    icu
-    GIT_REPOSITORY https://github.com/kbinani/icu-cpm
+    icu-cpm
+    GIT_REPOSITORY https://github.com/InCom-0/icu-cpm
     GIT_TAG        cpm
 )
 
-FetchContent_MakeAvailable(icu)
+FetchContent_MakeAvailable(icu-cpm)
 add_library(ICU::uc ALIAS icu)  # this alias is needed by harfbuzz
 add_library(icuuc ALIAS icu)  # this alias is needed by sfntly
 

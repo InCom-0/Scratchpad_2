@@ -53,8 +53,8 @@ int main() {
     // dbOnDisk(R"sql(INSERT INTO default_scheme (id, scheme_id) VALUES (1, NULL);)sql");
 
 
-    auto SQL_schemes  = my_project::Schemes{};
-    auto SQL_palettes = my_project::SchemePalette{};
+    auto SQL_schemes  = my_project::Schemes();
+    auto SQL_palettes = my_project::SchemePalette();
 
     dbOnDisk(insert_into(SQL_schemes)
                  .set(SQL_schemes.name = "testScheme3", SQL_schemes.fgColor = 5, SQL_schemes.bgColor = 12,

@@ -8,7 +8,7 @@ set(CPACK_PACKAGE_FILE_NAME "incplot")
 set(CPACK_PACKAGE_DIRECTORY ${PROJECT_BINARY_DIR})
 
 # From the GitHub About section
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CLI tool to draw great looking plots in the terminal with focus on ergonomics.")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "CLI tool for drawing great looking plots in the terminal focused on user ergonomics and simplicity.")
 
 # set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
 
@@ -22,7 +22,7 @@ set(CPACK_PACKAGE_VERSION_PATCH ${INCOM_VERSION_PATCH})
 # This should always be set to true.
 set(CPACK_VERBATIM_VARIABLES TRUE)
 
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.txt")
+set(CPACK_RESOURCE_FILE_LICENSE ${PROJECT_SOURCE_DIR}/LICENSE.txt)
 set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.md)
 
 

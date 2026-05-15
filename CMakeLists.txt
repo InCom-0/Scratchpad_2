@@ -6,7 +6,8 @@ project(Scratchpad
     "Project for authors experimentation with various features and libraries"
     LANGUAGES CXX)
 
-set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+option(CPM_USE_LOCAL_PACKAGES "Use local (usually system installed) packages for dependencies." ON)
+option(CPM_LOCAL_PACKAGES_ONLY "Forbid the build system from downloading missing dependencies." OFF)
 
 include(CMake_dependencies.cmake)
 

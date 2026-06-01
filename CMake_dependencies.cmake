@@ -5,14 +5,15 @@ CPMAddPackage(
     OPTIONS "BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS}"
     NAME SQLite3
 )
-set(BUILD_SQLITE3_CONNECTOR ON)
-CPMAddPackage("gh:rbock/sqlpp23#0.67")
+CPMAddPackage(
+    URI "gh:rbock/sqlpp23#0.67"
+    OPTIONS "BUILD_SQLITE3_CONNECTOR ON"
+)
 
 
 
 CPMAddPackage(
-    URL https://github.com/cameron314/readerwriterqueue/archive/refs/tags/v1.0.7.tar.gz
-    URL_HASH SHA256=532224ed052bcd5f4c6be0ed9bb2b8c88dfe7e26e3eb4dd9335303b059df6691
+    URI "gh:cameron314/readerwriterqueue#master"
     EXCLUDE_FROM_ALL TRUE
     NAME readerwriterqueue
 )

@@ -20,27 +20,26 @@ int main() {
     exec::async_scope        scope{};
     auto                     sch = pool.get_scheduler();
 
-    auto step = [](int jobId, const char *stage, auto tk) -> bool {
+    auto step = [](int jobId, const char *stage, stdexec::inplace_stop_token tk) -> bool {
         for (int i = 0; i < 25; ++i) {
             if (tk.stop_requested()) {
                 std::cout << "job " << jobId << " stopped in " << stage << "\n";
                 return false;
             }
-            std::this_thread::sleep_for(1ms);
+            std::this_thread::sleep_for(15ms);
         }
         std::cout << "job " << jobId << " finished " << stage << "\n";
         return true;
     };
 
     auto make_job = [=](int jobId) {
-        return stdexec::schedule(sch) | stdexec::let_value([=] {
-                   // Token comes from receiver environment (provided by async_scope).
-                   return stdexec::read_env(stdexec::get_stop_token) | stdexec::then([=](auto tk) {
-                              if (! step(jobId, "stage-1", tk)) { return; }
-                              if (! step(jobId, "stage-2", tk)) { return; }
-                              if (! step(jobId, "stage-3", tk)) { return; }
-                          });
-               });
+        return stdexec::starts_on(
+            sch,
+            stdexec::read_env(stdexec::get_stop_token) | stdexec::then([=](stdexec::inplace_stop_token tk) {
+                if (! step(jobId, "stage-1", tk)) { return; }
+                if (! step(jobId, "stage-2", tk)) { return; }
+                if (! step(jobId, "stage-3", tk)) { return; }
+            }));
     };
 
     scope.spawn(make_job(1));

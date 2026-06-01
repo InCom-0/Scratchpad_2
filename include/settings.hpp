@@ -111,17 +111,17 @@ inline constexpr std::expected<fs::path, std::filesystem::file_type> find_config
 #elif defined(__APPLE__)
         // 2. macOS Application Support
         if (const char *home = std::getenv("HOME")) {
-            pthToTry = fs::path(home) / "Library" / "Application Support" / appName / fileName;
+            pthToTry = fs::path(home) / "Library" / "Application Support" / appName / file;
             if (fs::exists(pthToTry)) { return pthToTry; }
         }
 #else
         // 2. Linux/Unix: XDG or ~/.config
         if (const char *xdg = std::getenv("XDG_CONFIG_HOME")) {
-            pthToTry = fs::path(xdg) / appName / fileName;
+            pthToTry = fs::path(xdg) / appName / file;
             if (fs::exists(pthToTry)) { return pthToTry; }
         }
         if (const char *home = std::getenv("HOME")) {
-            pthToTry = fs::path(xdg) / ".config" / appName / fileName;
+            pthToTry = fs::path(home) / ".config" / appName / file;
             if (fs::exists(pthToTry)) { return pthToTry; }
         }
 #endif

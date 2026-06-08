@@ -32,14 +32,13 @@ target_sources(Scratch
     src/private_inc)
 
 
-target_link_libraries(Scratch PRIVATE sqlpp23::sqlpp23 sqlpp23::sqlite3)
 target_link_libraries(Scratch PRIVATE STDEXEC::stdexec readerwriterqueue)
 
-# if(USING_LIBSTDCXX)
-#     target_link_libraries(Scratch PRIVATE "-lstdc++exp")
-# endif()
+if(USING_LIBSTDCXX)
+    target_link_libraries(Scratch PRIVATE "-lstdc++exp")
+endif()
 
-target_compile_features(Scratch PRIVATE cxx_std_23)
+target_compile_features(Scratch PRIVATE cxx_std_26)
 # target_compile_options(Scratch PRIVATE -freflection)
 
 

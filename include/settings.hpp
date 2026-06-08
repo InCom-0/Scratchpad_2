@@ -7,9 +7,6 @@
 #include <string>
 
 
-#include <sqlpp23/sqlite3/sqlite3.h>
-#include <sqlpp23/sqlpp23.h>
-
 #if defined(_WIN32)
 #include <shlobj.h>
 #include <windows.h>
